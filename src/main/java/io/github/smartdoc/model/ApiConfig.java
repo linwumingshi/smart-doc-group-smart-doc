@@ -1237,6 +1237,7 @@ public class ApiConfig {
 
 	public ApiConfig setCustomNoCommentTipMsg(String customNoCommentTipMsg) {
 		this.customNoCommentTipMsg = customNoCommentTipMsg;
+		System.out.println("test");
 		return this;
 	}
 
