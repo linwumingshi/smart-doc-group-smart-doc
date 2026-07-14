@@ -1711,4 +1711,14 @@ public class JavaClassUtil {
 			.setValue(enumValue);
 	}
 
+	/**
+	 * Gets the custom no comment tip message.
+	 * @param apiConfig The API configuration.
+	 * @return The custom no comment tip message.
+	 */
+	private static String getCustomNoCommentTipMsg(ApiConfig apiConfig) {
+		return apiConfig.isCustomNoCommentTip() && StringUtil.isNotEmpty(apiConfig.getCustomNoCommentTipMsg())
+				? apiConfig.getCustomNoCommentTipMsg() : DocGlobalConstants.NO_COMMENTS_FOUND;
+	}
+
 }

@@ -32,8 +32,6 @@ import io.github.smartdoc.utils.*;
 
 import java.util.*;
 
-import static io.github.smartdoc.constants.DocGlobalConstants.NO_COMMENTS_FOUND;
-
 /**
  * Base Doc Build Template
  *
@@ -47,15 +45,7 @@ public interface IBaseDocBuildTemplate {
 	 * @return String
 	 */
 	default String paramCommentResolve(String comment) {
-		if (StringUtil.isEmpty(comment)) {
-			comment = NO_COMMENTS_FOUND;
-		}
-		else {
-			if (comment.contains("|")) {
-				comment = comment.substring(0, comment.indexOf("|"));
-			}
-		}
-		return comment;
+		return DocUtil.paramCommentResolve(comment);
 	}
 
 	/**
