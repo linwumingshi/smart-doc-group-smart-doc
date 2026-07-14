@@ -503,6 +503,16 @@ public class ApiConfig {
 	 */
 	private boolean allowSelfReference = Boolean.FALSE;
 
+	/**
+	 * custom no comment tip
+	 */
+	private boolean customNoCommentTip = Boolean.FALSE;
+
+	/**
+	 * custom no comment tip msg
+	 */
+	private String customNoCommentTipMsg;
+
 	public static ApiConfig getInstance() {
 		return instance;
 	}
@@ -1209,6 +1219,24 @@ public class ApiConfig {
 
 	public ApiConfig setOpenApiTagNameType(OpenApiTagNameTypeEnum openApiTagNameType) {
 		this.openApiTagNameType = openApiTagNameType;
+		return this;
+	}
+
+	public boolean isCustomNoCommentTip() {
+		return customNoCommentTip;
+	}
+
+	public ApiConfig setCustomNoCommentTip(boolean customNoCommentTip) {
+		this.customNoCommentTip = customNoCommentTip;
+		return this;
+	}
+
+	public String getCustomNoCommentTipMsg() {
+		return customNoCommentTipMsg;
+	}
+
+	public ApiConfig setCustomNoCommentTipMsg(String customNoCommentTipMsg) {
+		this.customNoCommentTipMsg = customNoCommentTipMsg;
 		return this;
 	}
 
