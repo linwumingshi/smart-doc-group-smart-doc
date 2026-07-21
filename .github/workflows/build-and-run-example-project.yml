@@ -56,6 +56,8 @@ jobs:
           mvn versions:set-property -Dproperty="smart-doc.version" -DnewVersion="${{ env.smart-doc-version }}" -DgenerateBackupPoms=false
 
       - name: Build Maven Plugin
+        env:
+          MAVEN_OPTS: "-Xmx2048m -XX:MaxMetaspaceSize=512m"
         run: |
           cd smart-doc-maven-plugin
           mvn install -DskipTests=true 2>&1 | tee logs/build-plugin.log
