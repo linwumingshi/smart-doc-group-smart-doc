@@ -176,6 +176,18 @@ public class JsonBuildHelper extends BaseHelper {
 			return StringUtil.removeQuotes(DocUtil.jsonValueByType(typeName));
 		}
 
+		// A dynamic JSON object (e.g. fastjson2 JSONObject) has unknown fields at compile
+		// time, so render an empty object instead of expanding the JSON library internals
+		if (JavaClassValidateUtil.isJsonObjectType(typeName)) {
+			return "{}";
+		}
+
+		// A dynamic JSON array (e.g. fastjson2 JSONArray) has no known element type at
+		// compile time, so it is rendered with List<Object> semantics
+		if (JavaClassValidateUtil.isJsonArrayType(typeName)) {
+			return "[{\"object\":\"any object\"}]";
+		}
+
 		// Handle enum types
 		if (javaClass.isEnum()) {
 			return StringUtil
@@ -319,6 +331,31 @@ public class JsonBuildHelper extends BaseHelper {
 				result.append("\"").append(fieldName).append("\":");
 				// get mock value from tag @mock
 				String fieldValue = getFieldValueFromMockForJson(subTypeName, tagsMap, typeSimpleName);
+
+				// A dynamic JSON array is equivalent to List<Object>, so emit the array
+				// placeholder directly instead of expanding it as a POJO
+				if (JavaClassValidateUtil.isJsonArrayType(subTypeName)) {
+					if (StringUtil.isNotEmpty(fieldValue)) {
+						result.append(fieldValue).append(",");
+					}
+					else {
+						result.append("[{\"object\":\"any object\"}],");
+					}
+					continue;
+				}
+
+				// A dynamic JSON object has unknown fields, so emit an empty object
+				// instead of expanding the JSON library internals
+				if (JavaClassValidateUtil.isJsonObjectType(subTypeName)) {
+					if (StringUtil.isNotEmpty(fieldValue)) {
+						result.append(fieldValue).append(",");
+					}
+					else {
+						result.append("{},");
+					}
+					continue;
+				}
+
 				// if the field is primitive type, then get the default value
 				if (JavaClassValidateUtil.isPrimitive(subTypeName)) {
 					int data0Length = result.length();

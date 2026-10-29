@@ -89,6 +89,54 @@ public interface JavaTypeConstants {
 	String HASHTABLE_FULLY = "java.util.Hashtable";
 
 	/**
+	 * com.alibaba.fastjson.JSONArray, a dynamic JSON array of fastjson 1.x, equivalent to
+	 * java.util.List&lt;java.lang.Object&gt;
+	 */
+	String FASTJSON_JSON_ARRAY_FULLY = "com.alibaba.fastjson.JSONArray";
+
+	/**
+	 * com.alibaba.fastjson2.JSONArray, a dynamic JSON array of fastjson 2.x, equivalent
+	 * to java.util.List&lt;java.lang.Object&gt;
+	 */
+	String FASTJSON2_JSON_ARRAY_FULLY = "com.alibaba.fastjson2.JSONArray";
+
+	/**
+	 * com.google.gson.JsonArray, a dynamic JSON array of Gson, equivalent to
+	 * java.util.List&lt;java.lang.Object&gt;
+	 */
+	String GSON_JSON_ARRAY_FULLY = "com.google.gson.JsonArray";
+
+	/**
+	 * com.fasterxml.jackson.databind.node.ArrayNode, a dynamic JSON array of Jackson,
+	 * equivalent to java.util.List&lt;java.lang.Object&gt;
+	 */
+	String JACKSON_ARRAY_NODE_FULLY = "com.fasterxml.jackson.databind.node.ArrayNode";
+
+	/**
+	 * com.alibaba.fastjson.JSONObject, a dynamic JSON object of fastjson 1.x, rendered as
+	 * an empty JSON object because its fields are unknown at compile time
+	 */
+	String FASTJSON_JSON_OBJECT_FULLY = "com.alibaba.fastjson.JSONObject";
+
+	/**
+	 * com.alibaba.fastjson2.JSONObject, a dynamic JSON object of fastjson 2.x, rendered
+	 * as an empty JSON object because its fields are unknown at compile time
+	 */
+	String FASTJSON2_JSON_OBJECT_FULLY = "com.alibaba.fastjson2.JSONObject";
+
+	/**
+	 * com.google.gson.JsonObject, a dynamic JSON object of Gson, rendered as an empty
+	 * JSON object because its fields are unknown at compile time
+	 */
+	String GSON_JSON_OBJECT_FULLY = "com.google.gson.JsonObject";
+
+	/**
+	 * com.fasterxml.jackson.databind.node.ObjectNode, a dynamic JSON object of Jackson,
+	 * rendered as an empty JSON object because its fields are unknown at compile time
+	 */
+	String JACKSON_OBJECT_NODE_FULLY = "com.fasterxml.jackson.databind.node.ObjectNode";
+
+	/**
 	 * java.util.List
 	 */
 	String JAVA_LIST_FULLY = "java.util.List";

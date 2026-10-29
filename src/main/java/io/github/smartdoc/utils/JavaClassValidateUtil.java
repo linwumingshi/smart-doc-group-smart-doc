@@ -200,6 +200,44 @@ public class JavaClassValidateUtil {
 	}
 
 	/**
+	 * Check whether the type is a dynamic JSON object (fastjson 1.x/2.x, Gson or
+	 * Jackson). Its fields are unknown at compile time, so it is rendered as an empty
+	 * JSON object instead of exposing the internal fields of the JSON library.
+	 * @param type java type
+	 * @return boolean
+	 */
+	public static boolean isJsonObjectType(String type) {
+		switch (type) {
+			case JavaTypeConstants.FASTJSON_JSON_OBJECT_FULLY:
+			case JavaTypeConstants.FASTJSON2_JSON_OBJECT_FULLY:
+			case JavaTypeConstants.GSON_JSON_OBJECT_FULLY:
+			case JavaTypeConstants.JACKSON_OBJECT_NODE_FULLY:
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	/**
+	 * Check whether the type is a dynamic JSON array (fastjson 1.x/2.x, Gson or Jackson).
+	 * The element type is unknown at compile time, so it is handled with
+	 * {@code List<Object>} semantics.
+	 * @param type java type
+	 * @return boolean
+	 */
+	public static boolean isJsonArrayType(String type) {
+		switch (type) {
+			case JavaTypeConstants.FASTJSON_JSON_ARRAY_FULLY:
+			case JavaTypeConstants.FASTJSON2_JSON_ARRAY_FULLY:
+			case JavaTypeConstants.GSON_JSON_ARRAY_FULLY:
+			case JavaTypeConstants.JACKSON_ARRAY_NODE_FULLY:
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	/**
 	 * check array
 	 * @param type type name
 	 * @return boolean

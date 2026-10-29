@@ -23,6 +23,7 @@ package io.github.smartdoc.template;
 import io.github.smartdoc.builder.ProjectDocConfigBuilder;
 import io.github.smartdoc.constants.DocGlobalConstants;
 import io.github.smartdoc.constants.DocTags;
+import io.github.smartdoc.constants.JavaTypeConstants;
 import io.github.smartdoc.helper.ParamsBuildHelper;
 import io.github.smartdoc.model.*;
 import io.github.smartdoc.model.annotation.FrameworkAnnotations;
@@ -96,6 +97,18 @@ public interface IBaseDocBuildTemplate {
 		}
 		if (JavaClassValidateUtil.isPrimitive(typeName)) {
 			docJavaMethod.setReturnSchema(OpenApiSchemaUtil.primaryTypeSchema(typeName));
+			return new ArrayList<>(0);
+		}
+		// A dynamic JSON object (e.g. fastjson2 JSONObject) has no known fields, so
+		// describe its schema as a plain object
+		if (JavaClassValidateUtil.isJsonObjectType(typeName)) {
+			docJavaMethod.setReturnSchema(OpenApiSchemaUtil.primaryTypeSchema(JavaTypeConstants.JAVA_OBJECT_FULLY));
+			return new ArrayList<>(0);
+		}
+		// A dynamic JSON array (e.g. fastjson2 JSONArray) has no known element type, so
+		// describe its schema as array<object>
+		if (JavaClassValidateUtil.isJsonArrayType(typeName)) {
+			docJavaMethod.setReturnSchema(OpenApiSchemaUtil.arrayTypeSchema(JavaTypeConstants.JAVA_OBJECT_FULLY));
 			return new ArrayList<>(0);
 		}
 		if (JavaClassValidateUtil.isCollection(typeName)) {

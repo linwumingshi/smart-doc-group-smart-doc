@@ -133,6 +133,18 @@ public class ParamsBuildHelper extends BaseHelper {
 			return handlePrimitiveType(simpleName, isShowJavaType, atomicInteger, pid);
 		}
 
+		// A dynamic JSON object (e.g. fastjson2 JSONObject) has no known fields, so no
+		// parameter rows are generated instead of exposing the JSON library internals
+		if (JavaClassValidateUtil.isJsonObjectType(simpleName)) {
+			return Collections.emptyList();
+		}
+
+		// A dynamic JSON array (e.g. fastjson2 JSONArray) has no known element type at
+		// compile time, so it is handled with List<Object> semantics
+		if (JavaClassValidateUtil.isJsonArrayType(simpleName)) {
+			return buildGenericObjectParam(JavaTypeConstants.JAVA_OBJECT_FULLY, pre, isRequired, atomicInteger, pid);
+		}
+
 		// Handle collection types
 		if (JavaClassValidateUtil.isCollection(simpleName) || JavaClassValidateUtil.isArray(simpleName)) {
 			return handleCollectionOrArrayType(globGicName, pre, level, isRequired, isResp, registryClasses,
@@ -450,6 +462,18 @@ public class ParamsBuildHelper extends BaseHelper {
 							fieldJsonFormatValue);
 					// hand Param
 					processApiParam(paramList, param, isRequired, comment.toString(), since, strRequired);
+				}
+				else if (JavaClassValidateUtil.isJsonArrayType(subTypeName)) {
+					// A dynamic JSON array has no known element type, so the field is
+					// documented as an array of any object, exactly like List<Object>
+					param.setType(ParamTypeConstants.PARAM_TYPE_ARRAY);
+					if (tagsMap.containsKey(DocTags.MOCK) && StringUtil.isNotEmpty(tagsMap.get(DocTags.MOCK))) {
+						param.setValue(fieldValue);
+					}
+					processApiParam(paramList, param, isRequired, comment + appendComment, since, strRequired);
+					fieldPid = Optional.ofNullable(atomicInteger).isPresent() ? param.getId() : paramList.size() + pid;
+					paramList.addAll(buildGenericObjectParam(JavaTypeConstants.JAVA_OBJECT_FULLY, preBuilder.toString(),
+							isRequired, atomicInteger, fieldPid));
 				}
 				else if (JavaClassValidateUtil.isCollection(subTypeName)
 						|| JavaClassValidateUtil.isArray(subTypeName)) {
