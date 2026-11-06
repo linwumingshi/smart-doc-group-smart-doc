@@ -38,6 +38,7 @@ import io.github.smartdoc.model.ApiReqParam;
 import io.github.smartdoc.model.ApiSchema;
 import io.github.smartdoc.model.TagDoc;
 import io.github.smartdoc.model.openapi.OpenApiTag;
+import io.github.smartdoc.model.openapi.Schema;
 import io.github.smartdoc.utils.JsonUtil;
 import io.github.smartdoc.utils.OpenApiSchemaUtil;
 import com.power.common.util.CollectionUtil;
@@ -307,7 +308,19 @@ public class OpenApiBuilder extends AbstractOpenApiBuilder {
 					parameters.put("type", "integer");
 				}
 			}
-			parameters.putAll(this.buildParametersSchema(apiParam));
+			Schema schema = this.buildParametersSchema(apiParam);
+			if (schema.getType() != null) {
+				parameters.put("type", schema.getType());
+			}
+			if (schema.getFormat() != null) {
+				parameters.put("format", schema.getFormat());
+			}
+			if (schema.getEnumValues() != null) {
+				parameters.put("enum", schema.getEnumValues());
+			}
+			if (schema.getItems() != null) {
+				parameters.put("items", schema.getItems());
+			}
 		}
 		if (apiParam.getExtensions() != null && !apiParam.getExtensions().isEmpty()) {
 			apiParam.getExtensions().forEach((key, value) -> parameters.put("x-" + key, value));

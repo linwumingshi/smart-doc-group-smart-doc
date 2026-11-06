@@ -321,7 +321,9 @@ public class SwaggerBuilder extends AbstractOpenApiBuilder {
 
 	@Override
 	public Map<String, Object> buildComponentsSchema(ApiSchema<ApiDoc> apiSchema) {
-		return this.buildComponentData(apiSchema);
+		Map<String, Object> definitions = new HashMap<>(16);
+		definitions.putAll(this.buildComponentData(apiSchema));
+		return definitions;
 	}
 
 }
