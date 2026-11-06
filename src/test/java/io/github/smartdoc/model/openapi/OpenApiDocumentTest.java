@@ -59,6 +59,20 @@ public class OpenApiDocumentTest {
 	}
 
 	@Test
+	public void serializesResponseContent() {
+		Map<String, OpenApiMediaType> content = new LinkedHashMap<>();
+		content.put("application/json",
+				new OpenApiMediaType().setSchema(new Schema().setRef("#/components/schemas/User")));
+		Response response = new Response().setDescription("OK").setContent(content);
+		JsonObject json = toJson(response);
+		assertEquals("OK", json.get("description").getAsString());
+		assertTrue(json.getAsJsonObject("content")
+			.getAsJsonObject("application/json")
+			.getAsJsonObject("schema")
+			.has("$ref"));
+	}
+
+	@Test
 	public void omitsAbsentServerDescription() {
 		JsonObject json = toJson(new Server().setUrl("http://127.0.0.1:8080"));
 		assertEquals("http://127.0.0.1:8080", json.get("url").getAsString());

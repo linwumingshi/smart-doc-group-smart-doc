@@ -44,6 +44,8 @@ import io.github.smartdoc.model.TagDoc;
 import io.github.smartdoc.model.openapi.Example;
 import io.github.smartdoc.model.openapi.OpenApiMediaType;
 import io.github.smartdoc.model.openapi.OpenApiTag;
+import io.github.smartdoc.model.openapi.Response;
+import io.github.smartdoc.model.openapi.ResponseBody;
 import io.github.smartdoc.model.openapi.Operation;
 import io.github.smartdoc.model.openapi.Parameter;
 import io.github.smartdoc.model.openapi.PathItem;
@@ -140,7 +142,7 @@ public abstract class AbstractOpenApiBuilder {
 	 * @param apiConfig ApiConfig
 	 * @return Map of response body
 	 */
-	abstract Object buildResponsesBody(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc);
+	abstract ResponseBody buildResponsesBody(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc);
 
 	/**
 	 * Build request parameters
@@ -396,9 +398,9 @@ public abstract class AbstractOpenApiBuilder {
 	 * @param apiExceptionStatuses apiExceptionStatuses
 	 * @return responses keyed by http status code
 	 */
-	public Map<String, Object> buildResponses(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc,
+	public Map<String, ResponseBody> buildResponses(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc,
 			List<ApiExceptionStatus> apiExceptionStatuses) {
-		Map<String, Object> response = new LinkedHashMap<>(8);
+		Map<String, ResponseBody> response = new LinkedHashMap<>(8);
 		response.put("200", this.buildResponsesBody(apiConfig, apiMethodDoc));
 		if (CollectionUtil.isNotEmpty(apiExceptionStatuses)) {
 			for (ApiExceptionStatus apiExceptionStatus : apiExceptionStatuses) {
@@ -415,9 +417,8 @@ public abstract class AbstractOpenApiBuilder {
 	 * @param apiExceptionStatus ApiExceptionStatus
 	 * @return response body of the exception
 	 */
-	public Map<String, Object> buildExceptionResponsesBody(ApiConfig apiConfig, ApiExceptionStatus apiExceptionStatus) {
-		Map<String, Object> responseBody = new HashMap<>(8);
-		responseBody.put("description", apiExceptionStatus.getDesc());
+	public Response buildExceptionResponsesBody(ApiConfig apiConfig, ApiExceptionStatus apiExceptionStatus) {
+		Response response = new Response().setDescription(apiExceptionStatus.getDesc());
 		OpenApiMediaType mediaType = new OpenApiMediaType();
 		String responseRef = componentKey
 				+ OpenApiSchemaUtil.getClassNameFromParams(apiExceptionStatus.getExceptionResponseParams());
@@ -432,8 +433,8 @@ public abstract class AbstractOpenApiBuilder {
 		}
 		Map<String, OpenApiMediaType> content = new HashMap<>(8);
 		content.put("*/*", mediaType);
-		responseBody.put("content", content);
-		return responseBody;
+		response.setContent(content);
+		return response;
 	}
 
 	/**

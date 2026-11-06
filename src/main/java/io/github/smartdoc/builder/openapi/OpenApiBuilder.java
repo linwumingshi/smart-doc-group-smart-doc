@@ -45,6 +45,7 @@ import io.github.smartdoc.model.openapi.Server;
 import io.github.smartdoc.model.openapi.Operation;
 import io.github.smartdoc.model.openapi.Parameter;
 import io.github.smartdoc.model.openapi.RequestBody;
+import io.github.smartdoc.model.openapi.Response;
 import io.github.smartdoc.model.openapi.Schema;
 import io.github.smartdoc.utils.JsonUtil;
 import io.github.smartdoc.utils.OpenApiSchemaUtil;
@@ -225,11 +226,8 @@ public class OpenApiBuilder extends AbstractOpenApiBuilder {
 	 * @return response body
 	 */
 	@Override
-	public Map<String, Object> buildResponsesBody(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc) {
-		Map<String, Object> responseBody = new HashMap<>(10);
-		responseBody.put("description", "OK");
-		responseBody.put("content", this.buildContent(apiConfig, apiMethodDoc, true));
-		return responseBody;
+	public Response buildResponsesBody(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc) {
+		return new Response().setDescription("OK").setContent(this.buildContent(apiConfig, apiMethodDoc, true));
 	}
 
 	/**

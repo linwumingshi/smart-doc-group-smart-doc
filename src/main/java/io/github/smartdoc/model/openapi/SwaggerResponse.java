@@ -20,8 +20,6 @@
  */
 package io.github.smartdoc.model.openapi;
 
-import java.io.Serializable;
-
 /**
  * Response object of Swagger 2.
  * <p>
@@ -30,7 +28,7 @@ import java.io.Serializable;
  *
  * @author smart-doc
  */
-public class SwaggerResponse implements Serializable {
+public class SwaggerResponse implements ResponseBody {
 
 	private static final long serialVersionUID = -760052762240710629L;
 

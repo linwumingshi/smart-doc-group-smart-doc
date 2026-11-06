@@ -70,7 +70,7 @@ public class Operation implements Serializable {
 	/**
 	 * Responses keyed by http status code.
 	 */
-	private Map<String, Object> responses;
+	private Map<String, ResponseBody> responses;
 
 	/**
 	 * Whether the operation is deprecated.
@@ -199,7 +199,7 @@ public class Operation implements Serializable {
 	 * Returns the responses.
 	 * @return responses
 	 */
-	public Map<String, Object> getResponses() {
+	public Map<String, ResponseBody> getResponses() {
 		return responses;
 	}
 
@@ -208,7 +208,7 @@ public class Operation implements Serializable {
 	 * @param responses responses
 	 * @return this operation
 	 */
-	public Operation setResponses(Map<String, Object> responses) {
+	public Operation setResponses(Map<String, ResponseBody> responses) {
 		this.responses = responses;
 		return this;
 	}
