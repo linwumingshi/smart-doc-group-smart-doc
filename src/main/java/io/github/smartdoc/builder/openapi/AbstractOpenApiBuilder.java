@@ -140,7 +140,7 @@ public abstract class AbstractOpenApiBuilder {
 	 * @param apiConfig ApiConfig
 	 * @return Map of response body
 	 */
-	abstract Map<String, Object> buildResponsesBody(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc);
+	abstract Object buildResponsesBody(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc);
 
 	/**
 	 * Build request parameters
@@ -156,13 +156,6 @@ public abstract class AbstractOpenApiBuilder {
 	 * @return Map of request parameters
 	 */
 	abstract Parameter getStringParams(ApiParam apiParam, boolean hasItems);
-
-	/**
-	 * Build the component container of the document.
-	 * @param apiSchema API schema
-	 * @return components for OpenAPI 3, a definitions map for Swagger 2
-	 */
-	abstract public Object buildComponentsSchema(ApiSchema<ApiDoc> apiSchema);
 
 	/**
 	 * String component

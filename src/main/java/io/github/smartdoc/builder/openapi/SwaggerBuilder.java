@@ -39,7 +39,10 @@ import io.github.smartdoc.model.ApiSchema;
 import io.github.smartdoc.model.openapi.OpenApiMediaType;
 import io.github.smartdoc.model.openapi.Operation;
 import io.github.smartdoc.model.openapi.Parameter;
+import io.github.smartdoc.model.openapi.Info;
 import io.github.smartdoc.model.openapi.OpenApiTag;
+import io.github.smartdoc.model.openapi.Swagger;
+import io.github.smartdoc.model.openapi.SwaggerResponse;
 import io.github.smartdoc.utils.DocUtil;
 import io.github.smartdoc.utils.JsonUtil;
 import com.power.common.util.CollectionUtil;
@@ -123,16 +126,14 @@ public class SwaggerBuilder extends AbstractOpenApiBuilder {
 	public void openApiCreate(ApiConfig config, ApiSchema<ApiDoc> apiSchema) {
 		OPERATIONID_ORDER_NO_MAP.clear();
 		this.setComponentKey(getModuleName());
-		Map<String, Object> json = new HashMap<>(8);
-		json.put("swagger", "2.0");
-		json.put("info", buildInfo(config));
-		json.put("host", config.getServerUrl() == null ? "127.0.0.1" : config.getServerUrl());
-		json.put("basePath", StringUtils.isNotBlank(config.getPathPrefix()) ? config.getPathPrefix()
-				: DocGlobalConstants.PATH_DELIMITER);
+		Swagger json = new Swagger().setInfo(buildInfo(config))
+			.setHost(config.getServerUrl() == null ? "127.0.0.1" : config.getServerUrl())
+			.setBasePath(StringUtils.isNotBlank(config.getPathPrefix()) ? config.getPathPrefix()
+					: DocGlobalConstants.PATH_DELIMITER);
 		Set<OpenApiTag> tags = new HashSet<>();
-		json.put("tags", tags);
-		json.put("paths", buildPaths(config, apiSchema, tags, true));
-		json.put("definitions", buildComponentsSchema(apiSchema));
+		json.setTags(tags);
+		json.setPaths(buildPaths(config, apiSchema, tags, true));
+		json.setDefinitions(this.buildComponentData(apiSchema));
 
 		String filePath = config.getOutPath();
 		filePath = filePath + DocGlobalConstants.OPEN_API_JSON;
@@ -144,11 +145,10 @@ public class SwaggerBuilder extends AbstractOpenApiBuilder {
 	 * Build openapi info
 	 * @param apiConfig Configuration of smart-doc
 	 */
-	private static Map<String, Object> buildInfo(ApiConfig apiConfig) {
-		Map<String, Object> infoMap = new HashMap<>(8);
-		infoMap.put("title", apiConfig.getProjectName() == null ? "Project Name is Null." : apiConfig.getProjectName());
-		infoMap.put("version", "1.0.0");
-		return infoMap;
+	private static Info buildInfo(ApiConfig apiConfig) {
+		return new Info()
+			.setTitle(apiConfig.getProjectName() == null ? "Project Name is Null." : apiConfig.getProjectName())
+			.setVersion("1.0.0");
 	}
 
 	/**
@@ -235,18 +235,12 @@ public class SwaggerBuilder extends AbstractOpenApiBuilder {
 	 * @return response body
 	 */
 	@Override
-	public Map<String, Object> buildResponsesBody(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc) {
-		Map<String, Object> responseBody = new HashMap<>(10);
-		responseBody.put("description", "OK");
+	public SwaggerResponse buildResponsesBody(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc) {
+		SwaggerResponse responseBody = new SwaggerResponse().setDescription("OK");
 		if (CollectionUtil.isNotEmpty(apiMethodDoc.getResponseParams())
 				|| Objects.nonNull(apiMethodDoc.getReturnSchema())) {
 			OpenApiMediaType mediaType = this.buildContentBody(apiConfig, apiMethodDoc, true);
-			if (mediaType.getSchema() != null) {
-				responseBody.put("schema", mediaType.getSchema());
-			}
-			if (mediaType.getName() != null) {
-				responseBody.put("name", mediaType.getName());
-			}
+			responseBody.setSchema(mediaType.getSchema());
 		}
 		return responseBody;
 	}
@@ -335,18 +329,6 @@ public class SwaggerBuilder extends AbstractOpenApiBuilder {
 			}
 		}
 		return parameter;
-	}
-
-	/**
-	 * Build the definitions of the document.
-	 * @param apiSchema API schema
-	 * @return definitions keyed by schema name
-	 */
-	@Override
-	public Map<String, Object> buildComponentsSchema(ApiSchema<ApiDoc> apiSchema) {
-		Map<String, Object> definitions = new HashMap<>(16);
-		definitions.putAll(this.buildComponentData(apiSchema));
-		return definitions;
 	}
 
 }
