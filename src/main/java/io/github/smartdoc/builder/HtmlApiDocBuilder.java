@@ -93,7 +93,18 @@ public class HtmlApiDocBuilder {
 	 * @param javaProjectBuilder qdox project builder
 	 */
 	public static void render(ApiSchema<ApiDoc> schema, ApiConfig config, JavaProjectBuilder javaProjectBuilder) {
-		DocBuilderTemplate builderTemplate = new DocBuilderTemplate();
+		render(schema, config, javaProjectBuilder, new DocBuilderTemplate());
+	}
+
+	/**
+	 * Renders html from an already parsed schema.
+	 * @param schema parsed api schema
+	 * @param config ApiConfig
+	 * @param javaProjectBuilder qdox project builder
+	 * @param builderTemplate template shared by all formats of the current run
+	 */
+	public static void render(ApiSchema<ApiDoc> schema, ApiConfig config, JavaProjectBuilder javaProjectBuilder,
+			DocBuilderTemplate builderTemplate) {
 		IDocBuildTemplate<ApiDoc> docBuildTemplate = BuildTemplateFactory.getDocBuildTemplate(config.getFramework(),
 				config.getClassLoader());
 		List<ApiDoc> apiDocList = schema.getApiDatas();

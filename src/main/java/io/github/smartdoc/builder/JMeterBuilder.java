@@ -79,7 +79,18 @@ public class JMeterBuilder {
 	 * @param javaProjectBuilder qdox project builder
 	 */
 	public static void render(ApiSchema<ApiDoc> schema, ApiConfig config, JavaProjectBuilder javaProjectBuilder) {
-		DocBuilderTemplate builderTemplate = new DocBuilderTemplate();
+		render(schema, config, javaProjectBuilder, new DocBuilderTemplate());
+	}
+
+	/**
+	 * Renders a JMeter script from an already parsed schema.
+	 * @param schema parsed api schema
+	 * @param config ApiConfig
+	 * @param javaProjectBuilder qdox project builder
+	 * @param builderTemplate template shared by all formats of the current run
+	 */
+	public static void render(ApiSchema<ApiDoc> schema, ApiConfig config, JavaProjectBuilder javaProjectBuilder,
+			DocBuilderTemplate builderTemplate) {
 		List<ApiDoc> apiDocList = schema.getApiDatas();
 		String version = config.isCoverOld() ? ""
 				: "-V" + DateTimeUtil.long2Str(RunClock.now(), DocGlobalConstants.DATE_FORMAT_YYYY_MM_DD_HH_MM);

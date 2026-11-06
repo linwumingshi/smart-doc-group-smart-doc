@@ -64,6 +64,34 @@ public interface IBaseDocBuilderTemplate<T extends IDoc> {
 	Logger log = Logger.getLogger(IBaseDocBuilderTemplate.class.getName());
 
 	/**
+	 * Returns the error code list of the current render.
+	 * <p>
+	 * Implementations that render several documents in one run may override this method
+	 * to build the list only once. The default implementation keeps the historical
+	 * per-call behaviour. The returned list is read only and must not be modified.
+	 * @param config api config
+	 * @param javaProjectBuilder qdox project builder
+	 * @return error code list
+	 */
+	default List<ApiErrorCode> errorCodeDictList(ApiConfig config, JavaProjectBuilder javaProjectBuilder) {
+		return DocUtil.errorCodeDictToList(config, javaProjectBuilder);
+	}
+
+	/**
+	 * Returns the dictionary list of the current render.
+	 * <p>
+	 * Implementations that render several documents in one run may override this method
+	 * to build the list only once. The default implementation keeps the historical
+	 * per-call behaviour. The returned list is read only and must not be modified.
+	 * @param config api config
+	 * @param javaProjectBuilder qdox project builder
+	 * @return dictionary list
+	 */
+	default List<ApiDocDict> apiDocDictList(ApiConfig config, JavaProjectBuilder javaProjectBuilder) {
+		return DocUtil.buildDictionary(config, javaProjectBuilder);
+	}
+
+	/**
 	 * get all doc api data
 	 * @param isAsciidoc is Asciidoc
 	 * @param showJavaType show java type
@@ -199,14 +227,14 @@ public interface IBaseDocBuilderTemplate<T extends IDoc> {
 	default void bindingCommonVariable(ApiConfig config, JavaProjectBuilder javaProjectBuilder, Template template,
 			boolean apiDocListEmpty) {
 		String strTime = DateTimeUtil.long2Str(RunClock.now(), DateTimeUtil.DATE_FORMAT_SECOND);
-		List<ApiErrorCode> errorCodeList = DocUtil.errorCodeDictToList(config, javaProjectBuilder);
+		List<ApiErrorCode> errorCodeList = this.errorCodeDictList(config, javaProjectBuilder);
 		template.binding(TemplateVariable.ERROR_CODE_LIST.getVariable(), errorCodeList);
 		template.binding(TemplateVariable.VERSION_LIST.getVariable(), config.getRevisionLogs());
 		template.binding(TemplateVariable.DEPENDENCY_LIST.getVariable(), config.getRpcApiDependencies());
 		template.binding(TemplateVariable.VERSION.getVariable(), RunClock.now());
 		template.binding(TemplateVariable.CREATE_TIME.getVariable(), strTime);
 		template.binding(TemplateVariable.PROJECT_NAME.getVariable(), config.getProjectName());
-		List<ApiDocDict> apiDocDictList = DocUtil.buildDictionary(config, javaProjectBuilder);
+		List<ApiDocDict> apiDocDictList = this.apiDocDictList(config, javaProjectBuilder);
 		template.binding(TemplateVariable.DICT_LIST.getVariable(), apiDocDictList);
 		int codeIndex = apiDocListEmpty ? 1 : apiDocDictList.size();
 		if (CollectionUtil.isNotEmpty(errorCodeList)) {
@@ -319,7 +347,7 @@ public interface IBaseDocBuilderTemplate<T extends IDoc> {
 	 */
 	default Template buildErrorCodeDocTemplate(ApiConfig config, String template,
 			JavaProjectBuilder javaProjectBuilder) {
-		List<ApiErrorCode> errorCodeList = DocUtil.errorCodeDictToList(config, javaProjectBuilder);
+		List<ApiErrorCode> errorCodeList = this.errorCodeDictList(config, javaProjectBuilder);
 		String strTime = DateTimeUtil.long2Str(RunClock.now(), DateTimeUtil.DATE_FORMAT_SECOND);
 		Template tpl = BeetlTemplateUtil.getByName(template);
 		this.setCssCDN(config, tpl);

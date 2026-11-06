@@ -60,12 +60,18 @@ public class DocBuilderTemplate implements IBaseDocBuilderTemplate<ApiDoc> {
 	private List<ApiDocDict> apiDocDictListCache;
 
 	/**
-	 * Returns the error code list of this render, computing it only once.
+	 * Returns the error code list of this template, computing it only once.
+	 * <p>
+	 * The error codes only depend on the error code dictionaries of the config, which do
+	 * not change while a single document is rendered, so the list is built on first use
+	 * and reused afterwards. Reusing one template instance across output formats
+	 * therefore builds the list once per run.
 	 * @param config api config
 	 * @param javaProjectBuilder qdox project builder
-	 * @return error code list
+	 * @return error code list, read only
 	 */
-	private List<ApiErrorCode> getErrorCodeList(ApiConfig config, JavaProjectBuilder javaProjectBuilder) {
+	@Override
+	public List<ApiErrorCode> errorCodeDictList(ApiConfig config, JavaProjectBuilder javaProjectBuilder) {
 		if (Objects.isNull(errorCodeListCache)) {
 			errorCodeListCache = DocUtil.errorCodeDictToList(config, javaProjectBuilder);
 		}
@@ -73,12 +79,18 @@ public class DocBuilderTemplate implements IBaseDocBuilderTemplate<ApiDoc> {
 	}
 
 	/**
-	 * Returns the dictionary list of this render, computing it only once.
+	 * Returns the dictionary list of this template, computing it only once.
+	 * <p>
+	 * The dictionary only depends on the data dictionaries of the config, which do not
+	 * change while a single document is rendered, so the list is built on first use and
+	 * reused afterwards. Reusing one template instance across output formats therefore
+	 * builds the list once per run.
 	 * @param config api config
 	 * @param javaProjectBuilder qdox project builder
-	 * @return dictionary list
+	 * @return dictionary list, read only
 	 */
-	private List<ApiDocDict> getApiDocDictList(ApiConfig config, JavaProjectBuilder javaProjectBuilder) {
+	@Override
+	public List<ApiDocDict> apiDocDictList(ApiConfig config, JavaProjectBuilder javaProjectBuilder) {
 		if (Objects.isNull(apiDocDictListCache)) {
 			apiDocDictListCache = DocUtil.buildDictionary(config, javaProjectBuilder);
 		}
@@ -97,9 +109,9 @@ public class DocBuilderTemplate implements IBaseDocBuilderTemplate<ApiDoc> {
 		apiAllData.setProjectId(DocUtil.generateId(config.getProjectName()));
 		apiAllData.setLanguage(config.getLanguage().getCode());
 		apiAllData.setApiDocList(listOfApiData(config, javaProjectBuilder));
-		apiAllData.setErrorCodeList(this.getErrorCodeList(config, javaProjectBuilder));
+		apiAllData.setErrorCodeList(this.errorCodeDictList(config, javaProjectBuilder));
 		apiAllData.setRevisionLogs(config.getRevisionLogs());
-		apiAllData.setApiDocDictList(this.getApiDocDictList(config, javaProjectBuilder));
+		apiAllData.setApiDocDictList(this.apiDocDictList(config, javaProjectBuilder));
 		return apiAllData;
 	}
 
@@ -162,7 +174,7 @@ public class DocBuilderTemplate implements IBaseDocBuilderTemplate<ApiDoc> {
 	public Template buildAllRenderDocTemplate(List<ApiDoc> apiDocList, ApiConfig config,
 			JavaProjectBuilder javaProjectBuilder, String template, ApiDoc apiDoc, String index) {
 		String strTime = DateTimeUtil.long2Str(RunClock.now(), DateTimeUtil.DATE_FORMAT_SECOND);
-		List<ApiErrorCode> errorCodeList = this.getErrorCodeList(config, javaProjectBuilder);
+		List<ApiErrorCode> errorCodeList = this.errorCodeDictList(config, javaProjectBuilder);
 		Template tpl = BeetlTemplateUtil.getByName(template);
 		String style = config.getStyle();
 		tpl.binding(TemplateVariable.STYLE.getVariable(), style);
@@ -183,7 +195,7 @@ public class DocBuilderTemplate implements IBaseDocBuilderTemplate<ApiDoc> {
 		this.setCssCDN(config, tpl);
 
 		this.setDirectoryLanguageVariable(config, tpl);
-		List<ApiDocDict> apiDocDictList = this.getApiDocDictList(config, javaProjectBuilder);
+		List<ApiDocDict> apiDocDictList = this.apiDocDictList(config, javaProjectBuilder);
 		tpl.binding(TemplateVariable.DICT_LIST.getVariable(), apiDocDictList);
 
 		boolean onlyHasDefaultGroup = apiDocList.stream()
@@ -250,7 +262,7 @@ public class DocBuilderTemplate implements IBaseDocBuilderTemplate<ApiDoc> {
 	 */
 	public void buildSearchJs(ApiConfig config, JavaProjectBuilder javaProjectBuilder, List<ApiDoc> apiDocList,
 			String template) {
-		List<ApiErrorCode> errorCodeList = this.getErrorCodeList(config, javaProjectBuilder);
+		List<ApiErrorCode> errorCodeList = this.errorCodeDictList(config, javaProjectBuilder);
 		Template tpl = BeetlTemplateUtil.getByName(template);
 		// directory tree
 		List<ApiDoc> apiDocs = new ArrayList<>();
@@ -285,7 +297,7 @@ public class DocBuilderTemplate implements IBaseDocBuilderTemplate<ApiDoc> {
 			}
 		}
 		// set dict list
-		List<ApiDocDict> apiDocDictList = this.getApiDocDictList(config, javaProjectBuilder);
+		List<ApiDocDict> apiDocDictList = this.apiDocDictList(config, javaProjectBuilder);
 		if (CollectionUtil.isNotEmpty(apiDocDictList)) {
 			ApiDoc apiDoc1 = new ApiDoc();
 			int codeIndex = 0;
@@ -350,7 +362,7 @@ public class DocBuilderTemplate implements IBaseDocBuilderTemplate<ApiDoc> {
 	 */
 	public void buildErrorCodeDoc(ApiConfig config, JavaProjectBuilder javaProjectBuilder, List<ApiDoc> apiDocList,
 			String template, String outPutFileName, String indexAlias) {
-		List<ApiErrorCode> errorCodeList = this.getErrorCodeList(config, javaProjectBuilder);
+		List<ApiErrorCode> errorCodeList = this.errorCodeDictList(config, javaProjectBuilder);
 		String strTime = DateTimeUtil.long2Str(RunClock.now(), DateTimeUtil.DATE_FORMAT_SECOND);
 		Template errorTemplate = BeetlTemplateUtil.getByName(template);
 		errorTemplate.binding(TemplateVariable.PROJECT_NAME.getVariable(), config.getProjectName());
@@ -365,7 +377,7 @@ public class DocBuilderTemplate implements IBaseDocBuilderTemplate<ApiDoc> {
 		}
 		// set css cdn
 		this.setCssCDN(config, errorTemplate);
-		List<ApiDocDict> apiDocDictList = this.getApiDocDictList(config, javaProjectBuilder);
+		List<ApiDocDict> apiDocDictList = this.apiDocDictList(config, javaProjectBuilder);
 		errorTemplate.binding(TemplateVariable.CREATE_TIME.getVariable(), strTime);
 		errorTemplate.binding(TemplateVariable.VERSION.getVariable(), RunClock.now());
 		errorTemplate.binding(TemplateVariable.DICT_LIST.getVariable(), apiDocDictList);
@@ -390,14 +402,14 @@ public class DocBuilderTemplate implements IBaseDocBuilderTemplate<ApiDoc> {
 	 */
 	public void buildDirectoryDataDoc(ApiConfig config, JavaProjectBuilder javaProjectBuilder, List<ApiDoc> apiDocList,
 			String template, String outPutFileName, String indexAlias) {
-		List<ApiDocDict> directoryList = this.getApiDocDictList(config, javaProjectBuilder);
+		List<ApiDocDict> directoryList = this.apiDocDictList(config, javaProjectBuilder);
 		Template mapper = BeetlTemplateUtil.getByName(template);
 		String strTime = DateTimeUtil.long2Str(RunClock.now(), DateTimeUtil.DATE_FORMAT_SECOND);
 		mapper.binding(TemplateVariable.PROJECT_NAME.getVariable(), config.getProjectName());
 		String style = config.getStyle();
 		mapper.binding(TemplateVariable.HIGH_LIGHT_CSS_LINK.getVariable(), config.getHighlightStyleLink());
 		mapper.binding(TemplateVariable.STYLE.getVariable(), style);
-		List<ApiErrorCode> errorCodeList = this.getErrorCodeList(config, javaProjectBuilder);
+		List<ApiErrorCode> errorCodeList = this.errorCodeDictList(config, javaProjectBuilder);
 		// set css cdn
 		this.setCssCDN(config, mapper);
 		if (CollectionUtil.isNotEmpty(errorCodeList)) {
@@ -442,7 +454,7 @@ public class DocBuilderTemplate implements IBaseDocBuilderTemplate<ApiDoc> {
 	 */
 	public Template buildDirectoryDataDocTemplate(ApiConfig config, JavaProjectBuilder javaProjectBuilder,
 			String template) {
-		List<ApiDocDict> directoryList = this.getApiDocDictList(config, javaProjectBuilder);
+		List<ApiDocDict> directoryList = this.apiDocDictList(config, javaProjectBuilder);
 		Template mapper = BeetlTemplateUtil.getByName(template);
 		this.setDirectoryLanguageVariable(config, mapper);
 		// set css cdn

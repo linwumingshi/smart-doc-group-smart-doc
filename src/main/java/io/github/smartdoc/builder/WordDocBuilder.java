@@ -101,8 +101,20 @@ public class WordDocBuilder {
 	 * @param javaProjectBuilder qdox project builder
 	 */
 	public static void render(ApiSchema<ApiDoc> schema, ApiConfig config, JavaProjectBuilder javaProjectBuilder) {
+		render(schema, config, javaProjectBuilder, new DocBuilderTemplate());
+	}
+
+	/**
+	 * Renders a Word document from an already parsed schema.
+	 * @param schema parsed api schema
+	 * @param config ApiConfig
+	 * @param javaProjectBuilder qdox project builder
+	 * @param builderTemplate template shared by all formats of the current run
+	 */
+	public static void render(ApiSchema<ApiDoc> schema, ApiConfig config, JavaProjectBuilder javaProjectBuilder,
+			DocBuilderTemplate builderTemplate) {
 		try {
-			renderDoc(schema, config, javaProjectBuilder);
+			renderDoc(schema, config, javaProjectBuilder, builderTemplate);
 		}
 		catch (RuntimeException e) {
 			throw e;
@@ -112,9 +124,8 @@ public class WordDocBuilder {
 		}
 	}
 
-	private static void renderDoc(ApiSchema<ApiDoc> schema, ApiConfig config, JavaProjectBuilder javaProjectBuilder)
-			throws Exception {
-		DocBuilderTemplate builderTemplate = new DocBuilderTemplate();
+	private static void renderDoc(ApiSchema<ApiDoc> schema, ApiConfig config, JavaProjectBuilder javaProjectBuilder,
+			DocBuilderTemplate builderTemplate) throws Exception {
 		IDocBuildTemplate<ApiDoc> docBuildTemplate = BuildTemplateFactory.getDocBuildTemplate(config.getFramework(),
 				config.getClassLoader());
 		List<ApiDoc> apiDocList = schema.getApiDatas();

@@ -71,6 +71,16 @@ public class DocGenerator {
 	private final Map<ParseKey, ParseSnapshot> snapshots = new LinkedHashMap<>();
 
 	/**
+	 * Template shared by the parse phase and every renderer of one run.
+	 * <p>
+	 * The dictionary and error code lists only depend on the config of the run, so one
+	 * template instance lets them be built once per run instead of once per output
+	 * format. A new instance is created for every run, which keeps stale lists from
+	 * leaking into the next run.
+	 */
+	private DocBuilderTemplate builderTemplate;
+
+	/**
 	 * Creates a generator.
 	 * @param config api config
 	 * @param javaProjectBuilder qdox project builder
@@ -99,7 +109,7 @@ public class DocGenerator {
 		else {
 			now = System.currentTimeMillis();
 		}
-		generate(formats, now);
+		this.generate(formats, now);
 	}
 
 	/**
@@ -110,6 +120,7 @@ public class DocGenerator {
 	 */
 	public void generate(Collection<RenderFormat> formats, long now) {
 		snapshots.clear();
+		this.builderTemplate = new DocBuilderTemplate();
 		RunClock.beginRun(now);
 		try {
 			Map<ParseKey, List<RenderFormat>> groups = groupByParseKey(formats);
@@ -153,8 +164,7 @@ public class DocGenerator {
 		if (cached != null) {
 			return cached;
 		}
-		DocBuilderTemplate builderTemplate = new DocBuilderTemplate();
-		builderTemplate.checkAndInit(config, Boolean.TRUE);
+		this.builderTemplate.checkAndInit(config, Boolean.TRUE);
 		ProjectDocConfigBuilder configBuilder = new ProjectDocConfigBuilder(config, javaProjectBuilder);
 		IDocBuildTemplate<ApiDoc> docBuildTemplate = BuildTemplateFactory.getDocBuildTemplate(config.getFramework(),
 				config.getClassLoader());
@@ -172,13 +182,13 @@ public class DocGenerator {
 				AdocDocBuilder.render(schema, config, javaProjectBuilder);
 				break;
 			case HTML:
-				HtmlApiDocBuilder.render(schema, config, javaProjectBuilder);
+				HtmlApiDocBuilder.render(schema, config, javaProjectBuilder, builderTemplate);
 				break;
 			case WORD:
-				WordDocBuilder.render(schema, config, javaProjectBuilder);
+				WordDocBuilder.render(schema, config, javaProjectBuilder, builderTemplate);
 				break;
 			case JMETER:
-				JMeterBuilder.render(schema, config, javaProjectBuilder);
+				JMeterBuilder.render(schema, config, javaProjectBuilder, builderTemplate);
 				break;
 			case POSTMAN:
 				PostmanJsonBuilder.render(schema, config, javaProjectBuilder);
