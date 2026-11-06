@@ -38,6 +38,9 @@ import io.github.smartdoc.model.ApiReqParam;
 import io.github.smartdoc.model.ApiSchema;
 import io.github.smartdoc.model.TagDoc;
 import io.github.smartdoc.model.openapi.OpenApiTag;
+import io.github.smartdoc.model.openapi.Operation;
+import io.github.smartdoc.model.openapi.Parameter;
+import io.github.smartdoc.model.openapi.RequestBody;
 import io.github.smartdoc.model.openapi.Schema;
 import io.github.smartdoc.utils.JsonUtil;
 import io.github.smartdoc.utils.OpenApiSchemaUtil;
@@ -55,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -158,48 +162,37 @@ public class OpenApiBuilder extends AbstractOpenApiBuilder {
 	}
 
 	@Override
-	public Map<String, Object> buildPathUrlsRequest(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc, ApiDoc apiDoc,
+	public Operation buildPathUrlsRequest(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc, ApiDoc apiDoc,
 			List<ApiExceptionStatus> apiExceptionStatuses) {
-		Map<String, Object> request = new HashMap<>(20);
-		request.put("summary", apiMethodDoc.getDesc());
+		Operation operation = new Operation();
+		operation.setSummary(apiMethodDoc.getDesc());
 		if (!Objects.equals(apiMethodDoc.getDesc(), apiMethodDoc.getDetail())) {
 			// When summary and description are equal, there is only one
-			request.put("description", apiMethodDoc.getDetail());
+			operation.setDescription(apiMethodDoc.getDetail());
 		}
-		// String tag = StringUtil.isEmpty(apiDoc.getDesc()) ? OPENAPI_TAG :
-		// apiDoc.getDesc();
-		// if (StringUtil.isNotEmpty(apiMethodDoc.getGroup())) {
-		// request.put("tags", new String[]{tag});
-		// } else {
-		// request.put("tags", new String[]{tag});
-		// }
 		OpenApiTagNameTypeEnum openApiTagNameType = apiConfig.getOpenApiTagNameType();
 		switch (openApiTagNameType) {
 			case DESCRIPTION:
-				request.put("tags", new String[] { apiDoc.getDesc() });
+				operation.setTags(Collections.singletonList(apiDoc.getDesc()));
 				break;
 			case PACKAGE_NAME:
-				request.put("tags", new String[] { apiDoc.getPackageName() });
+				operation.setTags(Collections.singletonList(apiDoc.getPackageName()));
 				break;
 			default:
-				request.put("tags", apiMethodDoc.getTagRefs().stream().map(TagDoc::getTag).toArray());
+				operation.setTags(apiMethodDoc.getTagRefs().stream().map(TagDoc::getTag).collect(Collectors.toList()));
 		}
-		request.put("requestBody", this.buildRequestBody(apiConfig, apiMethodDoc));
-		request.put("parameters", this.buildParameters(apiMethodDoc));
-		request.put("responses", this.buildResponses(apiConfig, apiMethodDoc, apiExceptionStatuses));
-		request.put("deprecated", apiMethodDoc.isDeprecated());
-		List<String> paths = OpenApiSchemaUtil.getPatternResult("[A-Za-z0-9_{}]*", apiMethodDoc.getPath());
-		paths.add(apiMethodDoc.getType());
-
+		operation.setRequestBody(this.buildRequestBody(apiConfig, apiMethodDoc));
+		operation.setParameters(this.buildParameters(apiMethodDoc));
+		operation.setResponses(this.buildResponses(apiConfig, apiMethodDoc, apiExceptionStatuses));
+		operation.setDeprecated(apiMethodDoc.isDeprecated());
 		// add operationId
-		request.put("operationId",
+		operation.setOperationId(
 				this.buildOperationId(apiConfig.getOperationIdStrategy(), apiMethodDoc, OPERATIONID_ORDER_NO_MAP));
-
 		// add extension attribution
 		if (apiMethodDoc.getExtensions() != null) {
-			apiMethodDoc.getExtensions().forEach((key, value) -> request.put("x-" + key, value));
+			apiMethodDoc.getExtensions().forEach(operation::addExtension);
 		}
-		return request;
+		return operation;
 	}
 
 	/**
@@ -208,15 +201,13 @@ public class OpenApiBuilder extends AbstractOpenApiBuilder {
 	 * @param apiMethodDoc ApiMethodDoc
 	 * @return requestBody Map
 	 */
-	private Map<String, Object> buildRequestBody(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc) {
-		Map<String, Object> requestBody = new HashMap<>(8);
+	private RequestBody buildRequestBody(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc) {
 		boolean isPost = (apiMethodDoc.getType().equals(Methods.POST.getValue())
 				|| apiMethodDoc.getType().equals(Methods.PUT.getValue())
 				|| apiMethodDoc.getType().equals(Methods.PATCH.getValue()));
 		// add content of post method
 		if (isPost) {
-			requestBody.put("content", this.buildContent(apiConfig, apiMethodDoc, false));
-			return requestBody;
+			return new RequestBody().setContent(this.buildContent(apiConfig, apiMethodDoc, false));
 		}
 		return null;
 	}
@@ -230,103 +221,98 @@ public class OpenApiBuilder extends AbstractOpenApiBuilder {
 	}
 
 	@Override
-	public List<Map<String, Object>> buildParameters(ApiMethodDoc apiMethodDoc) {
-		Map<String, Object> parameters;
-		List<Map<String, Object>> parametersList = new ArrayList<>();
+	public List<Parameter> buildParameters(ApiMethodDoc apiMethodDoc) {
+		List<Parameter> parametersList = new ArrayList<>();
 		// Handling path parameters
 		for (ApiParam apiParam : apiMethodDoc.getPathParams()) {
-			parameters = this.getStringParams(apiParam, apiParam.isHasItems());
-			parameters.put("in", "path");
+			Parameter parameter = this.getStringParams(apiParam, apiParam.isHasItems());
+			parameter.setIn("path");
 			List<ApiParam> children = apiParam.getChildren();
 			if (CollectionUtil.isEmpty(children)) {
-				parametersList.add(parameters);
+				parametersList.add(parameter);
 			}
 		}
 		for (ApiParam apiParam : apiMethodDoc.getQueryParams()) {
 			if (apiParam.isHasItems()) {
-				parameters = this.getStringParams(apiParam, false);
-				Map<String, Object> arrayMap = new HashMap<>(16);
-				arrayMap.put("type", ParamTypeConstants.PARAM_TYPE_ARRAY);
-				arrayMap.put("items", this.getStringParams(apiParam, apiParam.isHasItems()));
-				parameters.put("schema", arrayMap);
-				parametersList.add(parameters);
+				Parameter parameter = this.getStringParams(apiParam, false);
+				Schema arraySchema = new Schema().setType(ParamTypeConstants.PARAM_TYPE_ARRAY)
+					.setItems(this.getStringParams(apiParam, apiParam.isHasItems()));
+				parameter.setSchema(arraySchema);
+				parametersList.add(parameter);
 			}
 			else {
-				parameters = this.getStringParams(apiParam, false);
+				Parameter parameter = this.getStringParams(apiParam, false);
 				List<ApiParam> children = apiParam.getChildren();
 				if (CollectionUtil.isEmpty(children)) {
-					parametersList.add(parameters);
+					parametersList.add(parameter);
 				}
 			}
 		}
 		// with headers
 		if (!CollectionUtil.isEmpty(apiMethodDoc.getRequestHeaders())) {
 			for (ApiReqParam header : apiMethodDoc.getRequestHeaders()) {
-				parameters = new HashMap<>(20);
-				parameters.put("name", header.getName());
-				parameters.put("required", header.isRequired());
-				parameters.put("description", header.getDesc());
-				parameters.put("example", getExampleValueBasedOnTypeForApiReqParam(header));
-				parameters.put("schema", buildParametersSchema(header));
-				parameters.put("in", "header");
-				parametersList.add(parameters);
+				Parameter parameter = new Parameter().setName(header.getName())
+					.setRequired(header.isRequired())
+					.setDescription(header.getDesc())
+					.setExample(getExampleValueBasedOnTypeForApiReqParam(header))
+					.setSchema(buildParametersSchema(header))
+					.setIn("header");
+				parametersList.add(parameter);
 			}
 		}
 		return parametersList;
 	}
 
 	@Override
-	public Map<String, Object> getStringParams(ApiParam apiParam, boolean hasItems) {
-		Map<String, Object> parameters;
-		parameters = new HashMap<>(20);
+	public Parameter getStringParams(ApiParam apiParam, boolean hasItems) {
+		Parameter parameter = new Parameter();
 		// add mock value for parameters
 		if (StringUtils.isNotEmpty(apiParam.getValue())) {
-			parameters.put("example", getExampleValueBasedOnTypeForApiParam(apiParam));
+			parameter.setExample(getExampleValueBasedOnTypeForApiParam(apiParam));
 		}
 		if (!hasItems) {
-			parameters.put("name", apiParam.getField());
-			parameters.put("description", apiParam.getDesc());
-			parameters.put("required", apiParam.isRequired());
-			parameters.put("in", "query");
-			parameters.put("schema", this.buildParametersSchema(apiParam));
+			parameter.setName(apiParam.getField());
+			parameter.setDescription(apiParam.getDesc());
+			parameter.setRequired(apiParam.isRequired());
+			parameter.setIn("query");
+			parameter.setSchema(this.buildParametersSchema(apiParam));
 		}
 		else {
 			if (ParamTypeConstants.PARAM_TYPE_OBJECT.equals(apiParam.getType())
 					|| (ParamTypeConstants.PARAM_TYPE_ARRAY.equals(apiParam.getType()) && apiParam.isHasItems())) {
-				parameters.put("type", "object");
-				parameters.put("description", "(complex POJO please use @RequestBody)");
+				parameter.setType("object");
+				parameter.setDescription("(complex POJO please use @RequestBody)");
 			}
 			else {
 				String desc = apiParam.getDesc();
 				if (desc.contains(ParamTypeConstants.PARAM_TYPE_FILE)) {
-					parameters.put("type", ParamTypeConstants.PARAM_TYPE_FILE);
+					parameter.setType(ParamTypeConstants.PARAM_TYPE_FILE);
 				}
 				else if (desc.contains("string")) {
-					parameters.put("type", "string");
+					parameter.setType("string");
 				}
 				else {
-					parameters.put("type", "integer");
+					parameter.setType("integer");
 				}
 			}
 			Schema schema = this.buildParametersSchema(apiParam);
 			if (schema.getType() != null) {
-				parameters.put("type", schema.getType());
+				parameter.setType(schema.getType());
 			}
 			if (schema.getFormat() != null) {
-				parameters.put("format", schema.getFormat());
+				parameter.setFormat(schema.getFormat());
 			}
 			if (schema.getEnumValues() != null) {
-				parameters.put("enum", schema.getEnumValues());
+				parameter.setEnumValues(schema.getEnumValues());
 			}
 			if (schema.getItems() != null) {
-				parameters.put("items", schema.getItems());
+				parameter.setItems(schema.getItems());
 			}
 		}
 		if (apiParam.getExtensions() != null && !apiParam.getExtensions().isEmpty()) {
-			apiParam.getExtensions().forEach((key, value) -> parameters.put("x-" + key, value));
+			apiParam.getExtensions().forEach(parameter::addExtension);
 		}
-
-		return parameters;
+		return parameter;
 	}
 
 	@Override

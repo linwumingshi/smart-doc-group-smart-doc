@@ -41,7 +41,12 @@ import io.github.smartdoc.model.ApiReqParam;
 import io.github.smartdoc.model.ApiSchema;
 import io.github.smartdoc.model.DocMapping;
 import io.github.smartdoc.model.TagDoc;
+import io.github.smartdoc.model.openapi.Example;
+import io.github.smartdoc.model.openapi.OpenApiMediaType;
 import io.github.smartdoc.model.openapi.OpenApiTag;
+import io.github.smartdoc.model.openapi.Operation;
+import io.github.smartdoc.model.openapi.Parameter;
+import io.github.smartdoc.model.openapi.PathItem;
 import io.github.smartdoc.model.openapi.Schema;
 import io.github.smartdoc.template.IDocBuildTemplate;
 import io.github.smartdoc.utils.DocUtil;
@@ -120,7 +125,7 @@ public abstract class AbstractOpenApiBuilder {
 	 * @param apiExceptionStatuses Exception status list
 	 * @return Map of request urls
 	 */
-	abstract Map<String, Object> buildPathUrlsRequest(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc, ApiDoc apiDoc,
+	abstract Operation buildPathUrlsRequest(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc, ApiDoc apiDoc,
 			List<ApiExceptionStatus> apiExceptionStatuses);
 
 	/**
@@ -136,7 +141,7 @@ public abstract class AbstractOpenApiBuilder {
 	 * @param apiMethodDoc API data for the method
 	 * @return List of parameters
 	 */
-	abstract List<Map<String, Object>> buildParameters(ApiMethodDoc apiMethodDoc);
+	abstract List<Parameter> buildParameters(ApiMethodDoc apiMethodDoc);
 
 	/**
 	 * Build request parameters
@@ -144,7 +149,7 @@ public abstract class AbstractOpenApiBuilder {
 	 * @param hasItems has items
 	 * @return Map of request parameters
 	 */
-	abstract Map<String, Object> getStringParams(ApiParam apiParam, boolean hasItems);
+	abstract Parameter getStringParams(ApiParam apiParam, boolean hasItems);
 
 	/**
 	 * component schema
@@ -166,10 +171,9 @@ public abstract class AbstractOpenApiBuilder {
 	 * @param isSwagger is swagger
 	 * @return Map of paths
 	 */
-	@SuppressWarnings("unchecked")
-	public Map<String, Object> buildPaths(ApiConfig apiConfig, ApiSchema<ApiDoc> apiSchema, Set<OpenApiTag> tags,
+	public Map<String, PathItem> buildPaths(ApiConfig apiConfig, ApiSchema<ApiDoc> apiSchema, Set<OpenApiTag> tags,
 			boolean isSwagger) {
-		Map<String, Object> pathMap = new LinkedHashMap<>(500);
+		Map<String, PathItem> pathMap = new LinkedHashMap<>(500);
 
 		List<ApiDoc> apiDocs = apiSchema.getApiDatas();
 		for (ApiDoc apiDoc : apiDocs) {
@@ -183,15 +187,9 @@ public abstract class AbstractOpenApiBuilder {
 					if (StringUtil.isNotEmpty(apiConfig.getPathPrefix()) && isSwagger) {
 						path = path.replace(apiConfig.getPathPrefix(), "");
 					}
-					Map<String, Object> request = this.buildPathUrls(apiConfig, methodDoc, methodDoc.getClazzDoc(),
+					Operation operation = this.buildPathUrlsRequest(apiConfig, methodDoc, methodDoc.getClazzDoc(),
 							apiSchema.getApiExceptionStatuses());
-					if (!pathMap.containsKey(path)) {
-						pathMap.put(path, request);
-					}
-					else {
-						Map<String, Object> oldRequest = (Map<String, Object>) pathMap.get(path);
-						oldRequest.putAll(request);
-					}
+					pathMap.computeIfAbsent(path, key -> new PathItem()).setOperation(methodDoc.getType(), operation);
 				}
 			}
 		}
@@ -207,37 +205,20 @@ public abstract class AbstractOpenApiBuilder {
 	}
 
 	/**
-	 * Build path urls
-	 * @param apiConfig ApiConfig
-	 * @param apiMethodDoc Method
-	 * @param apiDoc ApiDoc
-	 * @param apiExceptionStatuses Exception status list
-	 * @return Map of path urls
-	 */
-	public Map<String, Object> buildPathUrls(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc, ApiDoc apiDoc,
-			List<ApiExceptionStatus> apiExceptionStatuses) {
-		Map<String, Object> request = new HashMap<>(16);
-		request.put(apiMethodDoc.getType().toLowerCase(),
-				this.buildPathUrlsRequest(apiConfig, apiMethodDoc, apiDoc, apiExceptionStatuses));
-		return request;
-	}
-
-	/**
 	 * Build content for responses and requestBody
 	 * @param apiConfig ApiConfig
 	 * @param apiMethodDoc ApiMethodDoc
 	 * @param isRep is response
 	 * @return Map of content
 	 */
-	public Map<String, Object> buildContent(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc, boolean isRep) {
-		Map<String, Object> content = new HashMap<>(16);
+	public Map<String, OpenApiMediaType> buildContent(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc, boolean isRep) {
+		Map<String, OpenApiMediaType> content = new HashMap<>(16);
 		String contentType = apiMethodDoc.getContentType();
 		if (isRep) {
 			contentType = "*/*";
 		}
 		content.put(contentType, this.buildContentBody(apiConfig, apiMethodDoc, isRep));
 		return content;
-
 	}
 
 	/**
@@ -247,27 +228,26 @@ public abstract class AbstractOpenApiBuilder {
 	 * @param isRep is response
 	 * @return Map of content
 	 */
-	public Map<String, Object> buildContentBody(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc, boolean isRep) {
-		Map<String, Object> content = new HashMap<>(16);
+	public OpenApiMediaType buildContentBody(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc, boolean isRep) {
+		OpenApiMediaType mediaType = new OpenApiMediaType();
 		if (Objects.nonNull(apiMethodDoc.getReturnSchema()) && isRep) {
-			content.put("schema", apiMethodDoc.getReturnSchema());
+			mediaType.setSchema(apiMethodDoc.getReturnSchema());
 		}
 		else if (!isRep && Objects.nonNull(apiMethodDoc.getRequestSchema())) {
-			content.put("schema", apiMethodDoc.getRequestSchema());
+			mediaType.setSchema(apiMethodDoc.getRequestSchema());
 		}
 		else {
-			content.put("schema", this.buildBodySchema(apiMethodDoc, isRep));
+			mediaType.setSchema(this.buildBodySchema(apiMethodDoc, isRep));
 		}
 
 		if (OPENAPI_2_COMPONENT_KRY.equals(componentKey) && !isRep) {
-			content.put("name", apiMethodDoc.getName());
+			mediaType.setName(apiMethodDoc.getName());
 		}
 		if (OPENAPI_3_COMPONENT_KRY.equals(componentKey)
 				&& (!isRep && apiConfig.isRequestExample() || (isRep && apiConfig.isResponseExample()))) {
-			content.put("examples", buildBodyExample(apiMethodDoc, isRep));
+			mediaType.setExamples(buildBodyExample(apiMethodDoc, isRep));
 		}
-		return content;
-
+		return mediaType;
 	}
 
 	/**
@@ -330,11 +310,10 @@ public abstract class AbstractOpenApiBuilder {
 	 * @param isRep is response
 	 * @return Map of content
 	 */
-	public static Map<String, Object> buildBodyExample(ApiMethodDoc apiMethodDoc, boolean isRep) {
-		Map<String, Object> content = new HashMap<>(8);
+	public static Map<String, Example> buildBodyExample(ApiMethodDoc apiMethodDoc, boolean isRep) {
+		Map<String, Example> content = new HashMap<>(8);
 		content.put("json", buildExampleData(apiMethodDoc, isRep));
 		return content;
-
 	}
 
 	/**
@@ -343,20 +322,17 @@ public abstract class AbstractOpenApiBuilder {
 	 * @param isRep is response
 	 * @return Map of content
 	 */
-	public static Map<String, Object> buildExampleData(ApiMethodDoc apiMethodDoc, boolean isRep) {
-		Map<String, Object> content = new HashMap<>(8);
-		content.put("summary", "test data");
+	public static Example buildExampleData(ApiMethodDoc apiMethodDoc, boolean isRep) {
+		Example example = new Example().setSummary("test data");
 		if (!isRep) {
-			content.put("value",
-					StringUtil.isEmpty(apiMethodDoc.getRequestExample().getJsonBody())
-							? apiMethodDoc.getRequestExample().getExampleBody()
-							: apiMethodDoc.getRequestExample().getJsonBody());
+			example.setValue(StringUtil.isEmpty(apiMethodDoc.getRequestExample().getJsonBody())
+					? apiMethodDoc.getRequestExample().getExampleBody()
+					: apiMethodDoc.getRequestExample().getJsonBody());
 		}
 		else {
-			content.put("value", apiMethodDoc.getResponseUsage());
+			example.setValue(apiMethodDoc.getResponseUsage());
 		}
-		return content;
-
+		return example;
 	}
 
 	/**
@@ -443,24 +419,20 @@ public abstract class AbstractOpenApiBuilder {
 	public Map<String, Object> buildExceptionResponsesBody(ApiConfig apiConfig, ApiExceptionStatus apiExceptionStatus) {
 		Map<String, Object> responseBody = new HashMap<>(8);
 		responseBody.put("description", apiExceptionStatus.getDesc());
-		Map<String, Object> content = new HashMap<>(8);
-		Map<String, Object> mediaTypeContent = new HashMap<>(8);
-		Map<String, Object> schema = new HashMap<>(8);
+		OpenApiMediaType mediaType = new OpenApiMediaType();
 		String responseRef = componentKey
 				+ OpenApiSchemaUtil.getClassNameFromParams(apiExceptionStatus.getExceptionResponseParams());
 		if (CollectionUtil.isNotEmpty(apiExceptionStatus.getExceptionResponseParams())) {
-			schema.put("$ref", responseRef);
+			mediaType.setSchema(new Schema().setRef(responseRef));
 		}
-		mediaTypeContent.put("schema", schema);
 		if (OPENAPI_3_COMPONENT_KRY.equals(componentKey) && apiConfig.isResponseExample()) {
-			Map<String, Object> json = new HashMap<>(8);
-			Map<String, Object> jsonData = new HashMap<>(8);
-			jsonData.put("summary", "response example");
-			jsonData.put("value", apiExceptionStatus.getResponseUsage());
-			json.put("json", jsonData);
-			mediaTypeContent.put("examples", json);
+			Map<String, Example> examples = new HashMap<>(8);
+			examples.put("json",
+					new Example().setSummary("response example").setValue(apiExceptionStatus.getResponseUsage()));
+			mediaType.setExamples(examples);
 		}
-		content.put("*/*", mediaTypeContent);
+		Map<String, OpenApiMediaType> content = new HashMap<>(8);
+		content.put("*/*", mediaType);
 		responseBody.put("content", content);
 		return responseBody;
 	}
