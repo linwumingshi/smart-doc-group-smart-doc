@@ -170,10 +170,12 @@ public class SwaggerBuilder extends AbstractOpenApiBuilder {
 	}
 
 	/**
-	 * Build request
+	 * Build the operation of a method.
 	 * @param apiConfig Configuration of smart-doc
-	 * @param apiMethodDoc ApiMethodDoc
-	 * @param apiDoc apiDoc
+	 * @param apiMethodDoc Data of method
+	 * @param apiDoc single api doc
+	 * @param apiExceptionStatuses Exception status list
+	 * @return operation of the method
 	 */
 	@Override
 	public Operation buildPathUrlsRequest(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc, ApiDoc apiDoc,
@@ -227,8 +229,10 @@ public class SwaggerBuilder extends AbstractOpenApiBuilder {
 	}
 
 	/**
-	 * response body
-	 * @param apiMethodDoc ApiMethodDoc
+	 * Build the response body of a method.
+	 * @param apiConfig Configuration of smart-doc
+	 * @param apiMethodDoc Data of method
+	 * @return response body
 	 */
 	@Override
 	public Map<String, Object> buildResponsesBody(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc) {
@@ -247,6 +251,11 @@ public class SwaggerBuilder extends AbstractOpenApiBuilder {
 		return responseBody;
 	}
 
+	/**
+	 * Build the request parameters of a method.
+	 * @param apiMethodDoc API data for the method
+	 * @return parameter list
+	 */
 	@Override
 	public List<Parameter> buildParameters(ApiMethodDoc apiMethodDoc) {
 		List<Parameter> parametersList = new ArrayList<>();
@@ -286,6 +295,12 @@ public class SwaggerBuilder extends AbstractOpenApiBuilder {
 		return parametersList;
 	}
 
+	/**
+	 * Build one request parameter.
+	 * @param apiParam ApiParam
+	 * @param hasItems whether the parameter is the item definition of an array
+	 * @return parameter of the api param
+	 */
 	@Override
 	public Parameter getStringParams(ApiParam apiParam, boolean hasItems) {
 		Parameter parameter = new Parameter();
@@ -322,6 +337,11 @@ public class SwaggerBuilder extends AbstractOpenApiBuilder {
 		return parameter;
 	}
 
+	/**
+	 * Build the definitions of the document.
+	 * @param apiSchema API schema
+	 * @return definitions keyed by schema name
+	 */
 	@Override
 	public Map<String, Object> buildComponentsSchema(ApiSchema<ApiDoc> apiSchema) {
 		Map<String, Object> definitions = new HashMap<>(16);

@@ -37,7 +37,11 @@ import io.github.smartdoc.model.ApiParam;
 import io.github.smartdoc.model.ApiReqParam;
 import io.github.smartdoc.model.ApiSchema;
 import io.github.smartdoc.model.TagDoc;
+import io.github.smartdoc.model.openapi.Components;
+import io.github.smartdoc.model.openapi.Info;
+import io.github.smartdoc.model.openapi.OpenApi;
 import io.github.smartdoc.model.openapi.OpenApiTag;
+import io.github.smartdoc.model.openapi.Server;
 import io.github.smartdoc.model.openapi.Operation;
 import io.github.smartdoc.model.openapi.Parameter;
 import io.github.smartdoc.model.openapi.RequestBody;
@@ -121,14 +125,11 @@ public class OpenApiBuilder extends AbstractOpenApiBuilder {
 	public void openApiCreate(ApiConfig config, ApiSchema<ApiDoc> apiSchema) {
 		OPERATIONID_ORDER_NO_MAP.clear();
 		this.setComponentKey(getModuleName());
-		Map<String, Object> json = new LinkedHashMap<>(8);
-		json.put("openapi", "3.1.0");
-		json.put("info", buildInfo(config));
-		json.put("servers", buildServers(config));
+		OpenApi json = new OpenApi().setInfo(buildInfo(config)).setServers(buildServers(config));
 		Set<OpenApiTag> tags = new HashSet<>();
-		json.put("tags", tags);
-		json.put("paths", this.buildPaths(config, apiSchema, tags, false));
-		json.put("components", this.buildComponentsSchema(apiSchema));
+		json.setTags(tags);
+		json.setPaths(this.buildPaths(config, apiSchema, tags, false));
+		json.setComponents(this.buildComponentsSchema(apiSchema));
 
 		String filePath = config.getOutPath();
 		filePath = filePath + DocGlobalConstants.OPEN_API_JSON;
@@ -141,26 +142,31 @@ public class OpenApiBuilder extends AbstractOpenApiBuilder {
 	 * @param apiConfig Configuration of smart-doc
 	 * @return Map
 	 */
-	private static Map<String, Object> buildInfo(ApiConfig apiConfig) {
-		Map<String, Object> infoMap = new HashMap<>(8);
-		infoMap.put("title", apiConfig.getProjectName() == null ? "Project Name is Null." : apiConfig.getProjectName());
-		infoMap.put("version", "v1.0.0");
-		return infoMap;
+	private static Info buildInfo(ApiConfig apiConfig) {
+		return new Info()
+			.setTitle(apiConfig.getProjectName() == null ? "Project Name is Null." : apiConfig.getProjectName())
+			.setVersion("v1.0.0");
 	}
 
 	/**
 	 * Build Servers
 	 * @param config Configuration of smart-doc
-	 * @return List of Map
+	 * @return operation of the method
 	 */
-	private static List<Map<String, Object>> buildServers(ApiConfig config) {
-		List<Map<String, Object>> serverList = new ArrayList<>();
-		Map<String, Object> serverMap = new HashMap<>(8);
-		serverMap.put("url", config.getServerUrl() == null ? "" : config.getServerUrl());
-		serverList.add(serverMap);
+	private static List<Server> buildServers(ApiConfig config) {
+		List<Server> serverList = new ArrayList<>();
+		serverList.add(new Server().setUrl(config.getServerUrl() == null ? "" : config.getServerUrl()));
 		return serverList;
 	}
 
+	/**
+	 * Build the operation of a method.
+	 * @param apiConfig Configuration of smart-doc
+	 * @param apiMethodDoc Data of method
+	 * @param apiDoc single api doc
+	 * @param apiExceptionStatuses Exception status list
+	 * @return operation of the method
+	 */
 	@Override
 	public Operation buildPathUrlsRequest(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc, ApiDoc apiDoc,
 			List<ApiExceptionStatus> apiExceptionStatuses) {
@@ -196,10 +202,10 @@ public class OpenApiBuilder extends AbstractOpenApiBuilder {
 	}
 
 	/**
-	 * Build requestBody
+	 * Build the request body of a method.
 	 * @param apiConfig Configuration of smart-doc
-	 * @param apiMethodDoc ApiMethodDoc
-	 * @return requestBody Map
+	 * @param apiMethodDoc Data of method
+	 * @return request body, null when the method has no body
 	 */
 	private RequestBody buildRequestBody(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc) {
 		boolean isPost = (apiMethodDoc.getType().equals(Methods.POST.getValue())
@@ -212,6 +218,12 @@ public class OpenApiBuilder extends AbstractOpenApiBuilder {
 		return null;
 	}
 
+	/**
+	 * Build the response body of a method.
+	 * @param apiConfig Configuration of smart-doc
+	 * @param apiMethodDoc Data of method
+	 * @return response body
+	 */
 	@Override
 	public Map<String, Object> buildResponsesBody(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc) {
 		Map<String, Object> responseBody = new HashMap<>(10);
@@ -220,6 +232,11 @@ public class OpenApiBuilder extends AbstractOpenApiBuilder {
 		return responseBody;
 	}
 
+	/**
+	 * Build the request parameters of a method.
+	 * @param apiMethodDoc API data for the method
+	 * @return parameter list
+	 */
 	@Override
 	public List<Parameter> buildParameters(ApiMethodDoc apiMethodDoc) {
 		List<Parameter> parametersList = new ArrayList<>();
@@ -263,6 +280,12 @@ public class OpenApiBuilder extends AbstractOpenApiBuilder {
 		return parametersList;
 	}
 
+	/**
+	 * Build one request parameter.
+	 * @param apiParam ApiParam
+	 * @param hasItems whether the parameter is the item definition of an array
+	 * @return parameter of the api param
+	 */
 	@Override
 	public Parameter getStringParams(ApiParam apiParam, boolean hasItems) {
 		Parameter parameter = new Parameter();
@@ -315,11 +338,14 @@ public class OpenApiBuilder extends AbstractOpenApiBuilder {
 		return parameter;
 	}
 
+	/**
+	 * Build the components of the document.
+	 * @param apiSchema API schema
+	 * @return components of the document
+	 */
 	@Override
-	public Map<String, Object> buildComponentsSchema(ApiSchema<ApiDoc> apiSchema) {
-		Map<String, Object> schemas = new HashMap<>(4);
-		schemas.put("schemas", this.buildComponentData(apiSchema));
-		return schemas;
+	public Components buildComponentsSchema(ApiSchema<ApiDoc> apiSchema) {
+		return new Components().setSchemas(this.buildComponentData(apiSchema));
 	}
 
 }

@@ -79,6 +79,12 @@ import static io.github.smartdoc.constants.DocGlobalConstants.OPENAPI_3_COMPONEN
 public abstract class AbstractOpenApiBuilder {
 
 	/**
+	 * Creates a builder.
+	 */
+	protected AbstractOpenApiBuilder() {
+	}
+
+	/**
 	 * Logger for the class.
 	 */
 	private static final Logger logger = Logger.getLogger(AbstractOpenApiBuilder.class.getName());
@@ -152,11 +158,11 @@ public abstract class AbstractOpenApiBuilder {
 	abstract Parameter getStringParams(ApiParam apiParam, boolean hasItems);
 
 	/**
-	 * component schema
+	 * Build the component container of the document.
 	 * @param apiSchema API schema
-	 * @return component schema Map
+	 * @return components for OpenAPI 3, a definitions map for Swagger 2
 	 */
-	abstract public Map<String, Object> buildComponentsSchema(ApiSchema<ApiDoc> apiSchema);
+	abstract public Object buildComponentsSchema(ApiSchema<ApiDoc> apiSchema);
 
 	/**
 	 * String component
@@ -169,7 +175,7 @@ public abstract class AbstractOpenApiBuilder {
 	 * @param apiSchema Project API schema
 	 * @param tags tags
 	 * @param isSwagger is swagger
-	 * @return Map of paths
+	 * @return path items keyed by path
 	 */
 	public Map<String, PathItem> buildPaths(ApiConfig apiConfig, ApiSchema<ApiDoc> apiSchema, Set<OpenApiTag> tags,
 			boolean isSwagger) {
@@ -209,7 +215,7 @@ public abstract class AbstractOpenApiBuilder {
 	 * @param apiConfig ApiConfig
 	 * @param apiMethodDoc ApiMethodDoc
 	 * @param isRep is response
-	 * @return Map of content
+	 * @return content keyed by media type
 	 */
 	public Map<String, OpenApiMediaType> buildContent(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc, boolean isRep) {
 		Map<String, OpenApiMediaType> content = new HashMap<>(16);
@@ -226,7 +232,7 @@ public abstract class AbstractOpenApiBuilder {
 	 * @param apiConfig ApiConfig
 	 * @param apiMethodDoc ApiMethodDoc
 	 * @param isRep is response
-	 * @return Map of content
+	 * @return media type of the content
 	 */
 	public OpenApiMediaType buildContentBody(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc, boolean isRep) {
 		OpenApiMediaType mediaType = new OpenApiMediaType();
@@ -254,7 +260,7 @@ public abstract class AbstractOpenApiBuilder {
 	 * Build schema of Body
 	 * @param apiMethodDoc ApiMethodDoc
 	 * @param isRep is response
-	 * @return Map of schema
+	 * @return schema of the body
 	 */
 	public Schema buildBodySchema(ApiMethodDoc apiMethodDoc, boolean isRep) {
 		Schema schema = new Schema();
@@ -308,7 +314,7 @@ public abstract class AbstractOpenApiBuilder {
 	 * Build body example
 	 * @param apiMethodDoc ApiMethodDoc
 	 * @param isRep is response
-	 * @return Map of content
+	 * @return examples keyed by example name
 	 */
 	public static Map<String, Example> buildBodyExample(ApiMethodDoc apiMethodDoc, boolean isRep) {
 		Map<String, Example> content = new HashMap<>(8);
@@ -320,7 +326,7 @@ public abstract class AbstractOpenApiBuilder {
 	 * Build example data
 	 * @param apiMethodDoc ApiMethodDoc
 	 * @param isRep is response
-	 * @return Map of content
+	 * @return example of the request or response
 	 */
 	public static Example buildExampleData(ApiMethodDoc apiMethodDoc, boolean isRep) {
 		Example example = new Example().setSummary("test data");
@@ -395,7 +401,7 @@ public abstract class AbstractOpenApiBuilder {
 	 * @param apiMethodDoc ApiMethodDoc
 	 * @param apiConfig ApiConfig
 	 * @param apiExceptionStatuses apiExceptionStatuses
-	 * @return response info
+	 * @return responses keyed by http status code
 	 */
 	public Map<String, Object> buildResponses(ApiConfig apiConfig, ApiMethodDoc apiMethodDoc,
 			List<ApiExceptionStatus> apiExceptionStatuses) {
@@ -414,7 +420,7 @@ public abstract class AbstractOpenApiBuilder {
 	 * Build exception response body
 	 * @param apiConfig ApiConfig
 	 * @param apiExceptionStatus ApiExceptionStatus
-	 * @return Map of content
+	 * @return response body of the exception
 	 */
 	public Map<String, Object> buildExceptionResponsesBody(ApiConfig apiConfig, ApiExceptionStatus apiExceptionStatus) {
 		Map<String, Object> responseBody = new HashMap<>(8);
@@ -442,7 +448,7 @@ public abstract class AbstractOpenApiBuilder {
 	 * @param apiParam list of ApiParam
 	 * @param component component
 	 * @param isResp is response
-	 * @return properties
+	 * @return object schema holding the properties
 	 */
 	public Schema buildProperties(List<ApiParam> apiParam, Map<String, Schema> component, boolean isResp) {
 		Schema schema = new Schema();
@@ -476,11 +482,11 @@ public abstract class AbstractOpenApiBuilder {
 	}
 
 	/**
-	 * component schema properties
-	 * @param apiParam list of ApiParam
-	 * @param component component
-	 * @param isResp is response
-	 * @return properties
+	 * Build the schema of one property.
+	 * @param apiParam ApiParam of the property
+	 * @param component component schemas collected so far
+	 * @param isResp whether the property belongs to a response
+	 * @return schema of the property
 	 */
 	private Schema buildPropertiesData(ApiParam apiParam, Map<String, Schema> component, boolean isResp) {
 		Schema schema = new Schema();
@@ -555,7 +561,7 @@ public abstract class AbstractOpenApiBuilder {
 	 * documentation entries to extract request and response parameter information, and
 	 * organizes them into OpenAPI component schemas.
 	 * @param apiSchema The API documentation schema.
-	 * @return Returns a map containing all component schemas.
+	 * @return component schemas keyed by schema name
 	 */
 	public Map<String, Schema> buildComponentData(ApiSchema<ApiDoc> apiSchema) {
 		Map<String, Schema> component = new HashMap<>(16);
